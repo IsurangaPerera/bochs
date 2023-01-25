@@ -1,8 +1,8 @@
 /////////////////////////////////////////////////////////////////////////
-// $Id: logio.cc 14100 2021-01-30 19:40:18Z sshwarts $
+// $Id: logio.cc 13293 2017-09-10 15:55:13Z vruppert $
 /////////////////////////////////////////////////////////////////////////
 //
-//  Copyright (C) 2001-2020  The Bochs Project
+//  Copyright (C) 2001-2017  The Bochs Project
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -21,8 +21,6 @@
 /////////////////////////////////////////////////////////////////////////
 
 #include "bochs.h"
-#include "gui/siminterface.h"
-#include "pc_system.h"
 #include "bxthread.h"
 #include "cpu/cpu.h"
 #include <assert.h>
@@ -30,8 +28,6 @@
 #if BX_WITH_CARBON
 #include <Carbon/Carbon.h>
 #endif
-
-const int MAGIC_LOGNUM = 0x12345678;
 
 // Just for the iofunctions
 
@@ -388,7 +384,7 @@ void logfunctions::put(const char *n, const char *p)
     len = strlen(tmpbuf) - 2;
   }
   for(size_t i=1;i <= len;i++) {
-    tmpbuf[i] = toupper(p[i-1]);
+    tmpbuf[i]=p[i-1];
   }
 
   prefix = tmpbuf;
@@ -646,7 +642,7 @@ void logfunctions::fatal1(const char *fmt, ...)
 void logfunctions::fatal(int level, const char *prefix, const char *fmt, va_list ap, int exit_status)
 {
   char tmpbuf[1024];
-  char exit_msg[1024+1];
+  char exit_msg[1024];
 
   vsnprintf(tmpbuf, sizeof(tmpbuf), fmt, ap);
   va_end(ap);

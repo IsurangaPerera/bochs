@@ -1,8 +1,8 @@
 /////////////////////////////////////////////////////////////////
-// $Id: wxmain.h 14177 2021-03-08 09:04:16Z vruppert $
+// $Id: wxmain.h 13250 2017-06-03 14:32:56Z vruppert $
 /////////////////////////////////////////////////////////////////
 //
-//  Copyright (C) 2002-2021  The Bochs Project
+//  Copyright (C) 2002-2017  The Bochs Project
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -33,6 +33,7 @@ class LogViewDialog;
 
 //hack alert; yuck; FIXME
 extern MyFrame *theFrame;
+extern MyPanel *thePanel;
 
 // wxBochsClosing flag, see comments in wxmain.h
 extern bool wxBochsClosing;
@@ -107,8 +108,8 @@ enum
   // advanced log options
   ID_ApplyDefault,
   // dialog box: PluginControlDialog
-  ID_PluginList1,
-  ID_PluginList2,
+  ID_PluginList,
+  ID_PluginName,
   ID_Load,
   ID_Unload,
   // that's all
@@ -135,15 +136,14 @@ enum
 
 
 // defined in wxmain.cc
-int wx_ci_callback(void *userdata, ci_command_t command);
 void safeWxStrcpy(char *dest, wxString src, int destlen);
 
 /// the MyPanel methods are defined in wx.cc
 class MyPanel: public wxPanel
 {
-  bool fillBxKeyEvent(wxKeyEvent& event, BxKeyEvent& bxev, bool release);  // for all platforms
-  bool fillBxKeyEvent_MSW(wxKeyEvent& event, BxKeyEvent& bxev, bool release);
-  bool fillBxKeyEvent_GTK(wxKeyEvent& event, BxKeyEvent& bxev, bool release);
+  bx_bool fillBxKeyEvent(wxKeyEvent& event, BxKeyEvent& bxev, bx_bool release);  // for all platforms
+  bx_bool fillBxKeyEvent_MSW(wxKeyEvent& event, BxKeyEvent& bxev, bx_bool release);
+  bx_bool fillBxKeyEvent_GTK(wxKeyEvent& event, BxKeyEvent& bxev, bx_bool release);
 public:
   MyPanel(wxWindow* parent, wxWindowID id, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxTAB_TRAVERSAL, const wxString& name = wxT("panel"));
   ~MyPanel();
@@ -172,7 +172,7 @@ public:
   MyFrame(const wxString& title, const wxPoint& pos, const wxSize& size, const long style);
   ~MyFrame();
   enum StatusChange { Start, Stop, Pause, Resume };
-  void simStatusChanged(StatusChange change, bool popupNotify=false);
+  void simStatusChanged(StatusChange change, bx_bool popupNotify=false);
   void OnConfigNew(wxCommandEvent& event);
   void OnConfigRead(wxCommandEvent& event);
   void OnConfigSave(wxCommandEvent& event);
@@ -181,7 +181,7 @@ public:
   void OnAbout(wxCommandEvent& event);
   void OnStartSim(wxCommandEvent& event);
   void OnPauseResumeSim(wxCommandEvent& event);
-  bool SimThreadControl(bool resume);
+  bx_bool SimThreadControl(bx_bool resume);
   void OnKillSim(wxCommandEvent& event);
   void OnSim2CIEvent(wxCommandEvent& event);
   void OnLogDlg(BxEvent *be);
@@ -207,7 +207,6 @@ public:
   void OnToolbarClick(wxCommandEvent& event);
   int HandleAskParam(BxEvent *event);
   int HandleAskParamString(bx_param_string_c *param);
-  void StatusbarUpdate(BxEvent *event);
 
   // called from the sim thread's OnExit() method.
   void OnSimThreadExit();

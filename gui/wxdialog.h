@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////////////
-// $Id: wxdialog.h 14080 2021-01-21 18:10:40Z vruppert $
+// $Id: wxdialog.h 13010 2016-12-28 15:06:34Z vruppert $
 ////////////////////////////////////////////////////////////////////
 //
-//  Copyright (C) 2002-2021  The Bochs Project
+//  Copyright (C) 2002-2016  The Bochs Project
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -187,10 +187,9 @@ class PluginControlDialog: public wxDialog
 private:
   void Init();  // called automatically by ShowModal()
   void ShowHelp();
-  wxBoxSizer *vertSizer, *horzSizer, *buttonSizer;
-  wxBoxSizer *leftSizer, *centerSizer, *rightSizer;
-  wxStaticText *plugtxt1, *plugtxt2;
-  wxListBox *pluglist1, *pluglist2;
+  wxBoxSizer *vertSizer, *horzSizer, *listSizer, *editSizer, *buttonSizer;
+  wxTextCtrl *plugname;
+  wxListBox *pluglist;
   wxButton *btn_load, *btn_unload;
 public:
   PluginControlDialog(wxWindow* parent, wxWindowID id);

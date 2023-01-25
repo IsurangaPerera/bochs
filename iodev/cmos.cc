@@ -1,8 +1,8 @@
 /////////////////////////////////////////////////////////////////////////
-// $Id: cmos.cc 14175 2021-03-07 16:01:39Z vruppert $
+// $Id: cmos.cc 13653 2019-12-09 16:29:23Z sshwarts $
 /////////////////////////////////////////////////////////////////////////
 //
-//  Copyright (C) 2002-2021  The Bochs Project
+//  Copyright (C) 2002-2018  The Bochs Project
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -84,7 +84,7 @@ bx_cmos_c *theCmosDevice = NULL;
 // 0x5f   1   number of processors
 
 
-Bit8u bcd_to_bin(Bit8u value, bool is_binary)
+Bit8u bcd_to_bin(Bit8u value, bx_bool is_binary)
 {
   if (is_binary)
     return value;
@@ -92,7 +92,7 @@ Bit8u bcd_to_bin(Bit8u value, bool is_binary)
     return ((value >> 4) * 10) + (value & 0x0f);
 }
 
-Bit8u bin_to_bcd(Bit8u value, bool is_binary)
+Bit8u bin_to_bcd(Bit8u value, bx_bool is_binary)
 {
   if (is_binary)
     return value;
@@ -100,18 +100,24 @@ Bit8u bin_to_bcd(Bit8u value, bool is_binary)
     return ((value  / 10) << 4) | (value % 10);
 }
 
-PLUGIN_ENTRY_FOR_MODULE(cmos)
+int CDECL libcmos_LTX_plugin_init(plugin_t *plugin, plugintype_t type)
 {
-  if (mode == PLUGIN_INIT) {
+  if (type == PLUGTYPE_CORE) {
     theCmosDevice = new bx_cmos_c();
     bx_devices.pluginCmosDevice = theCmosDevice;
     BX_REGISTER_DEVICE_DEVMODEL(plugin, type, theCmosDevice, BX_PLUGIN_CMOS);
-  } else if (mode == PLUGIN_FINI) {
-    delete theCmosDevice;
-  } else if (mode == PLUGIN_PROBE) {
-    return (int)PLUGTYPE_CORE;
+    return 0; // Success
+  } else {
+    return -1;
   }
-  return 0; // Success
+}
+
+void CDECL libcmos_LTX_plugin_fini(void)
+{ 
+  if (theCmosDevice != NULL) {
+    delete theCmosDevice;
+    theCmosDevice = NULL;
+  }
 }
 
 bx_cmos_c::bx_cmos_c(void)
@@ -138,7 +144,7 @@ bx_cmos_c::~bx_cmos_c(void)
 
 void bx_cmos_c::init(void)
 {
-  BX_DEBUG(("Init $Id: cmos.cc 14175 2021-03-07 16:01:39Z vruppert $"));
+  BX_DEBUG(("Init $Id: cmos.cc 13653 2019-12-09 16:29:23Z sshwarts $"));
   // CMOS RAM & RTC
 
   DEV_register_ioread_handler(this, read_handler, 0x0070, "CMOS RAM", 1);
@@ -175,7 +181,7 @@ void bx_cmos_c::init(void)
     BX_INFO(("Using local time for initial clock"));
     BX_CMOS_THIS s.timeval = time(NULL);
   } else if (SIM->get_param_num(BXPN_CLOCK_TIME0)->get() == BX_CLOCK_TIME0_UTC) {
-    bool utc_ok = 0;
+    bx_bool utc_ok = 0;
 
     BX_INFO(("Using utc time for initial clock"));
 
@@ -204,8 +210,7 @@ void bx_cmos_c::init(void)
   }
 
   // load CMOS from image file if requested.
-  BX_CMOS_THIS s.use_image = SIM->get_param_bool(BXPN_CMOSIMAGE_ENABLED)->get();
-  if (BX_CMOS_THIS s.use_image) {
+  if (SIM->get_param_bool(BXPN_CMOSIMAGE_ENABLED)->get()) {
     int fd, ret;
     struct stat stat_buf;
 
@@ -306,7 +311,7 @@ void bx_cmos_c::save_image(void)
   int fd, ret;
 
   // save CMOS to image file if requested.
-  if (BX_CMOS_THIS s.use_image) {
+  if (SIM->get_param_bool(BXPN_CMOSIMAGE_ENABLED)->get()) {
     fd = open(SIM->get_param_string(BXPN_CMOSIMAGE_PATH)->getptr(), O_WRONLY
 #ifdef O_BINARY
        | O_BINARY
@@ -642,11 +647,7 @@ void bx_cmos_c::write(Bit32u address, Bit32u value, unsigned io_len)
                         " to retf to DWORD at 40:67"));
               break;
             default:
-              if (!BX_CMOS_THIS s.use_image) {
-                BX_ERROR(("unsupported shutdown status: 0x%02x!", value));
-              } else {
-                BX_DEBUG(("shutdown status register set to 0x%02x", value));
-              }
+              BX_ERROR(("unsupported shutdown status: 0x%02x!", value));
           }
           BX_CMOS_THIS s.reg[REG_SHUTDOWN_STATUS] = value;
           break;
@@ -739,7 +740,7 @@ void bx_cmos_c::uip_timer()
   // compare CMOS user copy of time/date to alarm time/date here
   if (BX_CMOS_THIS s.reg[REG_STAT_B] & 0x20) {
     // Alarm interrupts enabled
-    bool alarm_match = 1;
+    bx_bool alarm_match = 1;
     if ((BX_CMOS_THIS s.reg[REG_SEC_ALARM] & 0xc0) != 0xc0) {
       // seconds alarm not in dont care mode
       if (BX_CMOS_THIS s.reg[REG_SEC] != BX_CMOS_THIS s.reg[REG_SEC_ALARM])

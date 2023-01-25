@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////
-// $Id: vmware3.cc 14181 2021-03-11 21:46:25Z vruppert $
+// $Id: vmware3.cc 13475 2018-03-18 09:07:31Z vruppert $
 /////////////////////////////////////////////////////////////////////////
 
 /*
@@ -10,7 +10,7 @@
  * Contact: snrrrub@yahoo.com
  *
  * Copyright (C) 2003       Net Integration Technologies, Inc.
- * Copyright (C) 2003-2021  The Bochs Project
+ * Copyright (C) 2003-2018  The Bochs Project
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,48 +38,17 @@
 #include "osdep.h"
 #include "misc/bswap.h"
 #else
-#include "bochs.h"
-#include "plugin.h"
+#include "iodev.h"
 #endif
 #include "hdimage.h"
 #include "vmware3.h"
 
 const off_t vmware3_image_t::INVALID_OFFSET=(off_t)-1;
 
-#define LOG_THIS bx_hdimage_ctl.
+#define LOG_THIS bx_devices.pluginHDImageCtl->
 
 #define DTOH32_HEADER(field) (header.field = (dtoh32(header.field)))
 #define HTOD32_HEADER(field) (header.field = (htod32(header.field)))
-
-#ifndef BXIMAGE
-
-// disk image plugin entry point
-
-PLUGIN_ENTRY_FOR_IMG_MODULE(vmware3)
-{
-  if (mode == PLUGIN_PROBE) {
-    return (int)PLUGTYPE_IMG;
-  }
-  return 0; // Success
-}
-
-#endif
-
-//
-// Define the static class that registers the derived device image class,
-// and allocates one on request.
-//
-class bx_vmware3_locator_c : public hdimage_locator_c {
-public:
-  bx_vmware3_locator_c(void) : hdimage_locator_c("vmware3") {}
-protected:
-  device_image_t *allocate(Bit64u disk_size, const char *journal) {
-    return (new vmware3_image_t());
-  }
-  int check_format(int fd, Bit64u disk_size) {
-    return (vmware3_image_t::check_format(fd, disk_size));
-  }
-} bx_vmware3_match;
 
 int vmware3_image_t::check_format(int fd, Bit64u imgsize)
 {
@@ -103,7 +72,7 @@ int vmware3_image_t::check_format(int fd, Bit64u imgsize)
   return HDIMAGE_FORMAT_OK;
 }
 
-bool vmware3_image_t::read_header(int fd, COW_Header & header)
+bx_bool vmware3_image_t::read_header(int fd, COW_Header & header)
 {
   int ret;
 
@@ -211,21 +180,18 @@ int vmware3_image_t::write_ints(int fd, Bit32u *buffer, size_t count)
 char* vmware3_image_t::generate_cow_name(const char * filename, unsigned chain)
 {
   char * name = new char[strlen(filename) + 4];
-  if (name == NULL)
+  if(name == NULL)
     BX_PANIC(("unable to allocate %u bytes for vmware3 COW file name (base: %s, chain: %u)", (unsigned)strlen(filename) + 4, filename, chain));
   strcpy(name, filename);
   if (chain != 0) {
-    char chainstr[12];
-    sprintf(chainstr, "-%02u", chain + 1);
     char * period = strrchr(name, '.');
     if (period != 0) {
       char temp[1024];
-      strcpy(temp, period);
+      strcpy(temp, period + 1);
       *period = 0;
-      strcat(name, chainstr);
-      strcat(name, temp);
+      sprintf(name, "%s-%02d.%s", name, chain + 1, temp);
     } else {
-      strcat(name, chainstr);
+      sprintf(name, "%s-%02d", name, chain + 1);
     }
   }
   return name;
@@ -562,9 +528,9 @@ Bit32u vmware3_image_t::get_capabilities(void)
 }
 
 #ifndef BXIMAGE
-bool vmware3_image_t::save_state(const char *backup_fname)
+bx_bool vmware3_image_t::save_state(const char *backup_fname)
 {
-  bool ret = 1;
+  bx_bool ret = 1;
   char tempfn[BX_PATHNAME_LEN];
 
   unsigned count = current->header.number_of_chains;
@@ -581,7 +547,7 @@ void vmware3_image_t::restore_state(const char *backup_fname)
 {
   int temp_fd;
   Bit64u imgsize;
-  bool ret = 1;
+  bx_bool ret = 1;
   char tempfn[BX_PATHNAME_LEN];
 
   if ((temp_fd = hdimage_open_file(backup_fname, O_RDONLY, &imgsize, NULL)) < 0) {

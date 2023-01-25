@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////
-// $Id: tcp_input.cc 13932 2020-09-02 08:35:44Z vruppert $
+// $Id: tcp_input.cc 12269 2014-04-02 17:38:09Z vruppert $
 /////////////////////////////////////////////////////////////////////////
 /*
  * Copyright (c) 1982, 1986, 1988, 1990, 1993, 1994
@@ -104,13 +104,13 @@
 #endif
 static void tcp_dooptions(struct tcpcb *tp, u_char *cp, int cnt,
                           struct tcpiphdr *ti);
-static void tcp_xmit_timer(struct tcpcb *tp, int rtt);
+static void tcp_xmit_timer(register struct tcpcb *tp, int rtt);
 
 static int
-tcp_reass(struct tcpcb *tp, struct tcpiphdr *ti,
+tcp_reass(register struct tcpcb *tp, register struct tcpiphdr *ti,
           struct mbuf *m)
 {
-	struct tcpiphdr *q;
+	register struct tcpiphdr *q;
 	struct socket *so = tp->t_socket;
 	int flags;
 
@@ -135,7 +135,7 @@ tcp_reass(struct tcpcb *tp, struct tcpiphdr *ti,
 	 * segment.  If it provides all of our data, drop us.
 	 */
 	if (!tcpfrag_list_end(tcpiphdr_prev(q), tp)) {
-		int i;
+		register int i;
 		q = tcpiphdr_prev(q);
 		/* conversion to int (in i) handles seq wraparound */
 		i = q->ti_seq + q->ti_len - ti->ti_seq;
@@ -163,7 +163,7 @@ tcp_reass(struct tcpcb *tp, struct tcpiphdr *ti,
 	 * if they are completely covered, dequeue them.
 	 */
 	while (!tcpfrag_list_end(q, tp)) {
-		int i = (ti->ti_seq + ti->ti_len) - q->ti_seq;
+		register int i = (ti->ti_seq + ti->ti_len) - q->ti_seq;
 		if (i <= 0)
 			break;
 		if (i < q->ti_len) {
@@ -221,12 +221,12 @@ void
 tcp_input(struct mbuf *m, int iphlen, struct socket *inso)
 {
   	struct ip save_ip, *ip;
-	struct tcpiphdr *ti;
+	register struct tcpiphdr *ti;
 	caddr_t optp = NULL;
 	int optlen = 0;
 	int len, tlen, off;
-        struct tcpcb *tp = NULL;
-	int tiflags;
+        register struct tcpcb *tp = NULL;
+	register int tiflags;
         struct socket *so = NULL;
 	int todrop, acked, ourfinisacked, needoutput = 0;
 	int iss = 0;
@@ -1022,8 +1022,8 @@ trimthenstep6:
 		 * (maxseg^2 / cwnd per packet).
 		 */
 		{
-		  u_int cw = tp->snd_cwnd;
-		  u_int incr = tp->t_maxseg;
+		  register u_int cw = tp->snd_cwnd;
+		  register u_int incr = tp->t_maxseg;
 
 		  if (cw > tp->snd_ssthresh)
 		    incr = incr * incr / cw;
@@ -1346,7 +1346,7 @@ void
 tcp_pulloutofband(so, ti, m)
 	struct socket *so;
 	struct tcpiphdr *ti;
-	struct mbuf *m;
+	register struct mbuf *m;
 {
 	int cnt = ti->ti_urp - 1;
 
@@ -1377,9 +1377,9 @@ tcp_pulloutofband(so, ti, m)
  */
 
 static void
-tcp_xmit_timer(struct tcpcb *tp, int rtt)
+tcp_xmit_timer(register struct tcpcb *tp, int rtt)
 {
-	short delta;
+	register short delta;
 
 	DEBUG_CALL("tcp_xmit_timer");
 	DEBUG_ARG("tp = %lx", (long)tp);

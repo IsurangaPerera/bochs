@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////
-// $Id: mwait.cc 14100 2021-01-30 19:40:18Z sshwarts $
+// $Id: mwait.cc 13585 2019-10-24 20:33:05Z sshwarts $
 /////////////////////////////////////////////////////////////////////////
 //
 //  Copyright (C) 2019  The Bochs Project
@@ -22,17 +22,14 @@
 
 #define NEED_CPU_REG_SHORTCUTS 1
 #include "bochs.h"
-#include "gui/siminterface.h"
 #include "param_names.h"
 #include "cpu.h"
 #define LOG_THIS BX_CPU_THIS_PTR
 
-#include "pc_system.h"
-
 #include "decoder/ia_opcodes.h"
 
 #if BX_SUPPORT_MONITOR_MWAIT
-bool BX_CPU_C::is_monitor(bx_phy_address begin_addr, unsigned len)
+bx_bool BX_CPU_C::is_monitor(bx_phy_address begin_addr, unsigned len)
 {
   if (! BX_CPU_THIS_PTR monitor.armed) return 0;
 
@@ -169,7 +166,7 @@ void BX_CPP_AttrRegparmN(1) BX_CPU_C::MWAIT(bxInstruction_c *i)
     BX_NEXT_TRACE(i);
   }
 
-  static bool mwait_is_nop = SIM->get_param_bool(BXPN_MWAIT_IS_NOP)->get();
+  static bx_bool mwait_is_nop = SIM->get_param_bool(BXPN_MWAIT_IS_NOP)->get();
   if (mwait_is_nop) {
     BX_NEXT_TRACE(i);
   }

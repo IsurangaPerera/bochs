@@ -1,8 +1,8 @@
 /////////////////////////////////////////////////////////////////////////
-// $Id: cdrom_win32.h 14116 2021-01-31 15:44:39Z vruppert $
+// $Id: cdrom_win32.h 11924 2013-11-06 11:15:22Z vruppert $
 /////////////////////////////////////////////////////////////////////////
 //
-//  Copyright (C) 2002-2021  The Bochs Project
+//  Copyright (C) 2002-2013  The Bochs Project
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -25,11 +25,11 @@ class cdrom_win32_c : public cdrom_base_c {
 public:
   cdrom_win32_c(const char *dev);
   virtual ~cdrom_win32_c(void);
-  bool insert_cdrom(const char *dev = NULL);
+  bx_bool insert_cdrom(const char *dev = NULL);
   void eject_cdrom();
-  bool read_toc(Bit8u* buf, int* length, bool msf, int start_track, int format);
+  bx_bool read_toc(Bit8u* buf, int* length, bx_bool msf, int start_track, int format);
   Bit32u capacity();
-  bool read_block(Bit8u* buf, Bit32u lba, int blocksize) BX_CPP_AttrRegparmN(3);
+  bx_bool read_block(Bit8u* buf, Bit32u lba, int blocksize) BX_CPP_AttrRegparmN(3);
 private:
 #ifdef WIN32
   HANDLE hFile;

@@ -1,8 +1,8 @@
 /////////////////////////////////////////////////////////////////////////
-// $Id: pci2isa.cc 14163 2021-02-26 20:37:49Z vruppert $
+// $Id: pci2isa.cc 13497 2018-05-01 15:54:37Z vruppert $
 /////////////////////////////////////////////////////////////////////////
 //
-//  Copyright (C) 2002-2021  The Bochs Project
+//  Copyright (C) 2002-2018  The Bochs Project
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -39,18 +39,21 @@
 
 bx_piix3_c *thePci2IsaBridge = NULL;
 
-PLUGIN_ENTRY_FOR_MODULE(pci2isa)
+int CDECL libpci2isa_LTX_plugin_init(plugin_t *plugin, plugintype_t type)
 {
-  if (mode == PLUGIN_INIT) {
+  if (type == PLUGTYPE_CORE) {
     thePci2IsaBridge = new bx_piix3_c();
     bx_devices.pluginPci2IsaBridge = thePci2IsaBridge;
     BX_REGISTER_DEVICE_DEVMODEL(plugin, type, thePci2IsaBridge, BX_PLUGIN_PCI2ISA);
-  } else if (mode == PLUGIN_FINI) {
-    delete thePci2IsaBridge;
-  } else if (mode == PLUGIN_PROBE) {
-    return (int)PLUGTYPE_CORE;
+    return 0; // Success
+  } else {
+    return -1;
   }
-  return 0; // Success
+}
+
+void CDECL libpci2isa_LTX_plugin_fini(void)
+{
+  delete thePci2IsaBridge;
 }
 
 bx_piix3_c::bx_piix3_c()
@@ -75,7 +78,6 @@ void bx_piix3_c::init(void)
   } else {
     BX_P2I_THIS s.devfunc = BX_PCI_DEVICE(1, 0);
   }
-  BX_P2I_THIS s.map_slot_to_dev = DEV_pci_get_slot_mapping();
   DEV_register_pci_handlers(this, &BX_P2I_THIS s.devfunc, BX_PLUGIN_PCI2ISA,
       "PIIX3 PCI-to-ISA bridge");
 
@@ -220,9 +222,10 @@ void bx_piix3_c::pci_unregister_irq(unsigned pirq, Bit8u irq)
   }
 }
 
-void bx_piix3_c::pci_set_irq(Bit8u devfunc, unsigned line, bool level)
+void bx_piix3_c::pci_set_irq(Bit8u devfunc, unsigned line, bx_bool level)
 {
-  Bit8u pirq = ((devfunc >> 3) + line - BX_P2I_THIS s.map_slot_to_dev) & 0x03;
+  Bit8u offset = (BX_P2I_THIS s.chipset == BX_PCI_CHIPSET_I440BX) ? 8 : 2;
+  Bit8u pirq = ((devfunc >> 3) + line - offset) & 0x03;
 #if BX_SUPPORT_APIC
   // forward this function call to the ioapic too
   if (DEV_ioapic_present()) {
@@ -379,12 +382,6 @@ void bx_piix3_c::pci_write_handler(Bit8u address, Bit32u value, unsigned io_len)
           BX_DEBUG(("Set BIOS write support to %d", (value8 & 0x04) != 0));
           DEV_mem_set_bios_write((value8 & 0x04) != 0);
         }
-        if ((value8 & 0xc0) != (oldval & 0xc0)) {
-          BX_ERROR(("BIOS enable switches not supported (lower=%d / extended=%d)",
-                    (value8 >> 6) & 1, (value8 >> 7) & 1));
-          DEV_mem_set_bios_rom_access(BIOS_ROM_LOWER, (value8 >> 6) & 1);
-          DEV_mem_set_bios_rom_access(BIOS_ROM_EXTENDED, (value8 >> 7) & 1);
-        }
         BX_P2I_THIS pci_conf[address+i] = value8;
         break;
       case 0x4f:
@@ -395,11 +392,6 @@ void bx_piix3_c::pci_write_handler(Bit8u address, Bit32u value, unsigned io_len)
             DEV_ioapic_set_enabled(value8 & 0x01, (BX_P2I_THIS pci_conf[0x80] & 0x3f) << 10);
           }
 #endif
-          if ((value8 & 0x02) != (oldval & 0x02)) {
-            BX_ERROR(("1-meg extended BIOS enable switch not supported (value=%d)",
-                      (value8 >> 1) & 1));
-            DEV_mem_set_bios_rom_access(BIOS_ROM_1MEG, (value8 >> 1) & 1);
-          }
         }
         break;
       case 0x60:

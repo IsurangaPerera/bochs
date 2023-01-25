@@ -1,8 +1,8 @@
 /////////////////////////////////////////////////////////////////////////
-// $Id: soundsdl.cc 14181 2021-03-11 21:46:25Z vruppert $
+// $Id: soundsdl.cc 13235 2017-05-21 15:08:20Z vruppert $
 /////////////////////////////////////////////////////////////////////////
 //
-//  Copyright (C) 2012-2021  The Bochs Project
+//  Copyright (C) 2012-2017  The Bochs Project
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -25,9 +25,7 @@
 // is used to know when we are exporting symbols and when we are importing.
 #define BX_PLUGGABLE
 
-#include "bochs.h"
-#include "plugin.h"
-#include "pc_system.h"
+#include "iodev.h"
 #include "soundlow.h"
 #include "soundmod.h"
 #include "soundsdl.h"
@@ -38,14 +36,17 @@
 
 #include <SDL.h>
 
-// sound driver plugin entry point
+// sound driver plugin entry points
 
-PLUGIN_ENTRY_FOR_SND_MODULE(sdl)
+int CDECL libsdl_sound_plugin_init(plugin_t *plugin, plugintype_t type)
 {
-  if (mode == PLUGIN_PROBE) {
-    return (int)PLUGTYPE_SND;
-  }
+  // Nothing here yet
   return 0; // Success
+}
+
+void CDECL libsdl_sound_plugin_fini(void)
+{
+  // Nothing here yet
 }
 
 // SDL audio callback
@@ -152,7 +153,7 @@ void bx_soundlow_waveout_sdl_c::resampler(audio_buffer_t *inbuffer, audio_buffer
   }
 }
 
-bool bx_soundlow_waveout_sdl_c::mixer_common(Bit8u *buffer, int len)
+bx_bool bx_soundlow_waveout_sdl_c::mixer_common(Bit8u *buffer, int len)
 {
   Bit32u len2 = 0;
 

@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////
-// $Id: tcp_timer.cc 13932 2020-09-02 08:35:44Z vruppert $
+// $Id: tcp_timer.cc 12269 2014-04-02 17:38:09Z vruppert $
 /////////////////////////////////////////////////////////////////////////
 /*
  * Copyright (c) 1982, 1986, 1988, 1990, 1993
@@ -37,7 +37,7 @@
 
 #if BX_NETWORKING && BX_NETMOD_SLIRP
 
-static struct tcpcb *tcp_timers(struct tcpcb *tp, int timer);
+static struct tcpcb *tcp_timers(register struct tcpcb *tp, int timer);
 
 /*
  * Fast timeout routine for processing delayed acks
@@ -45,8 +45,8 @@ static struct tcpcb *tcp_timers(struct tcpcb *tp, int timer);
 void
 tcp_fasttimo(Slirp *slirp)
 {
-	struct socket *so;
-	struct tcpcb *tp;
+	register struct socket *so;
+	register struct tcpcb *tp;
 
 	DEBUG_CALL("tcp_fasttimo");
 
@@ -69,9 +69,9 @@ tcp_fasttimo(Slirp *slirp)
 void
 tcp_slowtimo(Slirp *slirp)
 {
-	struct socket *ip, *ipnxt;
-	struct tcpcb *tp;
-	int i;
+	register struct socket *ip, *ipnxt;
+	register struct tcpcb *tp;
+	register int i;
 
 	DEBUG_CALL("tcp_slowtimo");
 
@@ -111,7 +111,7 @@ tpgone:
 void
 tcp_canceltimers(struct tcpcb *tp)
 {
-	int i;
+	register int i;
 
 	for (i = 0; i < TCPT_NTIMERS; i++)
 		tp->t_timer[i] = 0;
@@ -124,9 +124,9 @@ const int tcp_backoff[TCP_MAXRXTSHIFT + 1] =
  * TCP timer processing.
  */
 static struct tcpcb *
-tcp_timers(struct tcpcb *tp, int timer)
+tcp_timers(register struct tcpcb *tp, int timer)
 {
-	int rexmt;
+	register int rexmt;
 
 	DEBUG_CALL("tcp_timers");
 

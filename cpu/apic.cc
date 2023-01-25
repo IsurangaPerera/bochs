@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////
-// $Id: apic.cc 14321 2021-07-25 18:02:36Z sshwarts $
+// $Id: apic.cc 13645 2019-12-06 19:38:59Z sshwarts $
 /////////////////////////////////////////////////////////////////////////
 //
 //  Copyright (c) 2002-2019 Zwane Mwaikambo, Stanislav Shwartsman
@@ -28,7 +28,7 @@
 
 #if BX_SUPPORT_APIC
 
-extern bool simulate_xapic;
+extern bx_bool simulate_xapic;
 
 #define LOG_THIS this->
 
@@ -39,7 +39,7 @@ const unsigned BX_LAPIC_LAST_VECTOR  = 0xff;
 
 ///////////// APIC BUS /////////////
 
-int apic_bus_deliver_interrupt(Bit8u vector, apic_dest_t dest, Bit8u delivery_mode, bool logical_dest, bool level, bool trig_mode)
+int apic_bus_deliver_interrupt(Bit8u vector, apic_dest_t dest, Bit8u delivery_mode, bx_bool logical_dest, bx_bool level, bx_bool trig_mode)
 {
   if(delivery_mode == APIC_DM_LOWPRI)
   {
@@ -76,20 +76,20 @@ int apic_bus_deliver_interrupt(Bit8u vector, apic_dest_t dest, Bit8u delivery_mo
     // logical destination mode
     if(dest == 0) return 0;
 
-    bool interrupt_delivered = false;
+    bx_bool interrupt_delivered = 0;
 
     for (int i=0; i<BX_NUM_LOCAL_APICS; i++) {
       if(BX_CPU_APIC(i)->match_logical_addr(dest)) {
         BX_CPU_APIC(i)->deliver(vector, delivery_mode, trig_mode);
-        interrupt_delivered = true;
+        interrupt_delivered = 1;
       }
     }
 
-    return (int) interrupt_delivered;
+    return interrupt_delivered;
   }
 }
 
-int apic_bus_deliver_lowest_priority(Bit8u vector, apic_dest_t dest, bool trig_mode, bool broadcast)
+int apic_bus_deliver_lowest_priority(Bit8u vector, apic_dest_t dest, bx_bool trig_mode, bx_bool broadcast)
 {
   int i;
 
@@ -128,7 +128,7 @@ int apic_bus_deliver_lowest_priority(Bit8u vector, apic_dest_t dest, bool trig_m
   return 0;
 }
 
-int apic_bus_broadcast_interrupt(Bit8u vector, Bit8u delivery_mode, bool trig_mode, int exclude_cpu)
+int apic_bus_broadcast_interrupt(Bit8u vector, Bit8u delivery_mode, bx_bool trig_mode, int exclude_cpu)
 {
   if(delivery_mode == APIC_DM_LOWPRI)
   {
@@ -295,14 +295,9 @@ void bx_local_apic_c::set_base(bx_phy_address newbase)
   base_addr = newbase;
   BX_INFO(("allocate APIC id=%d (MMIO %s) to 0x" FMT_PHY_ADDRX,
     apic_id, (mode == BX_APIC_XAPIC_MODE) ? "enabled" : "disabled", newbase));
-
-  if (mode == BX_APIC_GLOBALLY_DISABLED) {
-    // if local apic becomes globally disabled reset some fields back to defaults
-    write_spurious_interrupt_register(0xff);
-  }
 }
 
-bool bx_local_apic_c::is_selected(bx_phy_address addr)
+bx_bool bx_local_apic_c::is_selected(bx_phy_address addr)
 {
   if (mode != BX_APIC_XAPIC_MODE) return 0;
 
@@ -762,7 +757,7 @@ void bx_local_apic_c::startup_msg(Bit8u vector)
   cpu->deliver_SIPI(vector);
 }
 
-bool bx_local_apic_c::get_vector(Bit32u *reg, unsigned vector)
+bx_bool bx_local_apic_c::get_vector(Bit32u *reg, unsigned vector)
 {
   return (reg[vector / 32] >> (vector % 32)) & 0x1;
 }
@@ -823,7 +818,7 @@ void bx_local_apic_c::service_local_apic(void)
   cpu->signal_event(BX_EVENT_PENDING_LAPIC_INTR);
 }
 
-bool bx_local_apic_c::deliver(Bit8u vector, Bit8u delivery_mode, Bit8u trig_mode)
+bx_bool bx_local_apic_c::deliver(Bit8u vector, Bit8u delivery_mode, Bit8u trig_mode)
 {
   switch(delivery_mode) {
   case APIC_DM_FIXED:
@@ -858,7 +853,7 @@ bool bx_local_apic_c::deliver(Bit8u vector, Bit8u delivery_mode, Bit8u trig_mode
   return 1;
 }
 
-void bx_local_apic_c::trigger_irq(Bit8u vector, unsigned trigger_mode, bool bypass_irr_isr)
+void bx_local_apic_c::trigger_irq(Bit8u vector, unsigned trigger_mode, bx_bool bypass_irr_isr)
 {
   BX_DEBUG(("trigger interrupt vector=0x%02x", vector));
 
@@ -927,21 +922,21 @@ void bx_local_apic_c::print_status(void)
   BX_INFO(("lapic %d: status is {:", apic_id));
   for(unsigned vec=0; vec<=BX_LAPIC_LAST_VECTOR; vec++) {
     if(get_vector(irr, vec) || get_vector(isr, vec)) {
-      BX_INFO(("vec: %u, irr=%d, isr=%d", vec, get_vector(irr, vec), get_vector(isr, vec)));
+      BX_INFO(("vec: %u, irr=%u, isr=%u", get_vector(irr, vec), get_vector(isr, vec)));
     }
   }
   BX_INFO(("}"));
 }
 
-bool bx_local_apic_c::match_logical_addr(apic_dest_t address)
+bx_bool bx_local_apic_c::match_logical_addr(apic_dest_t address)
 {
-  bool match = false;
+  bx_bool match = 0;
 
 #if BX_CPU_LEVEL >= 6
   if (mode == BX_APIC_X2APIC_MODE) {
     // only cluster model supported in x2apic mode
     if (address == 0xffffffff) // // broadcast all
-      return true;
+      return 1;
     if ((address & 0xffff0000) == (ldr & 0xffff0000))
       match = ((address & ldr & 0x0000ffff) != 0);
     return match;
@@ -957,7 +952,7 @@ bool bx_local_apic_c::match_logical_addr(apic_dest_t address)
   else if (dest_format == 0) {
     // cluster model
     if (address == 0xff) // broadcast all
-      return true;
+      return 1;
 
     if ((unsigned)(address & 0xf0) == (unsigned)(ldr & 0xf0))
       match = ((address & ldr & 0x0f) != 0);
@@ -1015,7 +1010,7 @@ Bit8u bx_local_apic_c::get_apr(void)
   return(Bit8u) apr;
 }
 
-bool bx_local_apic_c::is_focus(Bit8u vector)
+bx_bool bx_local_apic_c::is_focus(Bit8u vector)
 {
   if(focus_disable) return 0;
   return get_vector(irr, vector) || get_vector(isr, vector);
@@ -1164,7 +1159,7 @@ Bit64u bx_local_apic_c::get_tsc_deadline(void)
 #if BX_SUPPORT_VMX >= 2
 Bit32u bx_local_apic_c::read_vmx_preemption_timer(void)
 {
-  Bit64u diff = (bx_pc_system.time_ticks() >> vmx_preemption_timer_rate) - (vmx_preemption_timer_initial >> vmx_preemption_timer_rate);
+  Bit32u diff = (bx_pc_system.time_ticks() >> vmx_preemption_timer_rate) - (vmx_preemption_timer_initial >> vmx_preemption_timer_rate);
   if (vmx_preemption_timer_value < diff)
     return 0;
   else
@@ -1225,7 +1220,7 @@ void bx_local_apic_c::mwaitx_timer_expired(void *this_ptr)
   
 #if BX_CPU_LEVEL >= 6
 // return false when x2apic is not supported/not readable
-bool bx_local_apic_c::read_x2apic(unsigned index, Bit64u *val_64)
+bx_bool bx_local_apic_c::read_x2apic(unsigned index, Bit64u *val_64)
 {
   index = (index - 0x800) << 4;
 
@@ -1299,7 +1294,7 @@ bool bx_local_apic_c::read_x2apic(unsigned index, Bit64u *val_64)
 }
 
 // return false when x2apic is not supported/not writeable
-bool bx_local_apic_c::write_x2apic(unsigned index, Bit32u val32_hi, Bit32u val32_lo)
+bx_bool bx_local_apic_c::write_x2apic(unsigned index, Bit32u val32_hi, Bit32u val32_lo)
 {
   index = (index - 0x800) << 4;
 

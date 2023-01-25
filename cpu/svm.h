@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////
-// $Id: svm.h 14193 2021-03-21 15:33:18Z sshwarts $
+// $Id: svm.h 12857 2015-10-09 19:33:36Z sshwarts $
 /////////////////////////////////////////////////////////////////////////
 //
 //   Copyright (c) 2011-2015 Stanislav Shwartsman
@@ -255,8 +255,6 @@ typedef struct bx_SVM_HOST_STATE
   Bit64u rsp;
   Bit64u rax;
 
-  BxPackedRegister pat_msr;
-
 } SVM_HOST_STATE;
 
 typedef struct bx_SVM_GUEST_STATE
@@ -273,7 +271,6 @@ typedef struct bx_SVM_GUEST_STATE
   Bit32u dr6;
   Bit32u dr7;
   bx_phy_address cr3;
-  BxPackedRegister pat_msr;
   Bit32u eflags;
   Bit64u rip;
   Bit64u rsp;
@@ -281,7 +278,7 @@ typedef struct bx_SVM_GUEST_STATE
 
   unsigned cpl;
 
-  bool inhibit_interrupts;
+  bx_bool inhibit_interrupts;
 
 } SVM_GUEST_STATE;
 
@@ -305,11 +302,11 @@ typedef struct bx_SVM_CONTROLS
 
   Bit8u v_tpr;
   Bit8u v_intr_prio;
-  bool v_ignore_tpr;
-  bool v_intr_masking;
+  bx_bool v_ignore_tpr;
+  bx_bool v_intr_masking;
   Bit8u v_intr_vector;
 
-  bool nested_paging;
+  bx_bool nested_paging;
   Bit64u ncr3;
 
   Bit16u pause_filter_count;

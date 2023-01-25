@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////////////////
-// $Id: virt_timer.cc 14109 2021-01-30 23:55:24Z vruppert $
+// $Id: virt_timer.cc 12615 2015-01-25 21:24:13Z sshwarts $
 /////////////////////////////////////////////////////////////////////////
 //
-//  Copyright (C) 2002-2021  The Bochs Project
+//  Copyright (C) 2002-2014  The Bochs Project
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -58,7 +58,6 @@
 /////////////////////////////////////////////////////////////////////////
 
 #include "bochs.h"
-#include "gui/siminterface.h"
 #include "param_names.h"
 #include "virt_timer.h"
 
@@ -128,7 +127,7 @@ void bx_virt_timer_c::nullTimer(void* this_ptr)
   UNUSED(this_ptr);
 }
 
-void bx_virt_timer_c::periodic(Bit64u time_passed, bool mode)
+void bx_virt_timer_c::periodic(Bit64u time_passed, bx_bool mode)
 {
   //Assert that we haven't skipped any events.
   BX_ASSERT (time_passed <= s[mode].timers_next_event_time);
@@ -184,7 +183,7 @@ void bx_virt_timer_c::periodic(Bit64u time_passed, bool mode)
 
 //Get the current virtual time.
 //  This may return the same value on subsequent calls.
-Bit64u bx_virt_timer_c::time_usec(bool mode)
+Bit64u bx_virt_timer_c::time_usec(bx_bool mode)
 {
   //Update the time here only if we're not in a timer handler.
   //If we're in a timer handler we're up-to-date, and otherwise
@@ -198,7 +197,7 @@ Bit64u bx_virt_timer_c::time_usec(bool mode)
 //Get the current virtual time.
 //  This will return a monotonically increasing value.
 // MUST NOT be called from within a timer interrupt.
-Bit64u bx_virt_timer_c::time_usec_sequential(bool mode)
+Bit64u bx_virt_timer_c::time_usec_sequential(bx_bool mode)
 {
   //Can't prevent call stack loops here, so this
   // MUST NOT be called from within a timer handler.
@@ -216,8 +215,8 @@ Bit64u bx_virt_timer_c::time_usec_sequential(bool mode)
 //Register a timer handler to go off after a given interval.
 //Register a timer handler to go off with a periodic interval.
 int bx_virt_timer_c::register_timer(void *this_ptr, bx_timer_handler_t handler,
-                                    Bit32u useconds, bool continuous,
-                                    bool active, bool realtime,
+                                    Bit32u useconds, bx_bool continuous,
+                                    bx_bool active, bx_bool realtime,
                                     const char *id)
 {
   //We don't like starting with a zero period timer.
@@ -259,7 +258,7 @@ int bx_virt_timer_c::register_timer(void *this_ptr, bx_timer_handler_t handler,
 }
 
 //unregister a previously registered timer.
-bool bx_virt_timer_c::unregisterTimer(unsigned timerID)
+bx_bool bx_virt_timer_c::unregisterTimer(unsigned timerID)
 {
   BX_ASSERT(timerID < BX_MAX_VIRTUAL_TIMERS);
 
@@ -281,14 +280,14 @@ void bx_virt_timer_c::start_timers(void)
 
 //activate a deactivated but registered timer.
 void bx_virt_timer_c::activate_timer(unsigned timer_index, Bit32u useconds,
-                                     bool continuous)
+                                     bx_bool continuous)
 {
   BX_ASSERT(timer_index < BX_MAX_VIRTUAL_TIMERS);
 
   BX_ASSERT(timer[timer_index].inUse);
   BX_ASSERT(useconds>0);
 
-  bool realtime = timer[timer_index].realtime;
+  bx_bool realtime = timer[timer_index].realtime;
   timer[timer_index].period = useconds;
   timer[timer_index].timeToFire = s[realtime].current_timers_time + (Bit64u)useconds;
   timer[timer_index].active = 1;
@@ -310,7 +309,7 @@ void bx_virt_timer_c::deactivate_timer(unsigned timer_index)
   timer[timer_index].active = 0;
 }
 
-void bx_virt_timer_c::advance_virtual_time(Bit64u time_passed, bool mode)
+void bx_virt_timer_c::advance_virtual_time(Bit64u time_passed, bx_bool mode)
 {
   BX_ASSERT(time_passed <= s[mode].virtual_next_event_time);
 
@@ -323,7 +322,7 @@ void bx_virt_timer_c::advance_virtual_time(Bit64u time_passed, bool mode)
 }
 
 //Called when next_event_time changes.
-void bx_virt_timer_c::next_event_time_update(bool mode)
+void bx_virt_timer_c::next_event_time_update(bx_bool mode)
 {
   s[mode].virtual_next_event_time = s[mode].timers_next_event_time + s[mode].current_timers_time - s[mode].current_virtual_time;
   if (init_done) {
@@ -423,7 +422,7 @@ void bx_virt_timer_c::register_state(void)
   BXRS_DEC_PARAM_SIMPLE(list, ticks_per_second);
 }
 
-void bx_virt_timer_c::timer_handler(bool mode)
+void bx_virt_timer_c::timer_handler(bx_bool mode)
 {
   if (!mode) {
     Bit64u temp_final_time = bx_pc_system.time_usec();

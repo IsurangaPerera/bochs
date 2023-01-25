@@ -1,5 +1,5 @@
 /////////////////////////////////////////////////////////////////////////
-// $Id: dbg_breakpoints.cc 14121 2021-02-04 18:25:27Z sshwarts $
+// $Id: dbg_breakpoints.cc 13288 2017-09-03 11:43:30Z sshwarts $
 /////////////////////////////////////////////////////////////////////////
 //
 //  Copyright (C) 2017  The Bochs Project
@@ -20,7 +20,6 @@
 /////////////////////////////////////////////////////////////////////////
 
 #include "bochs.h"
-#include "debug.h"
 
 #if BX_DEBUGGER
 
@@ -50,7 +49,7 @@ void bx_dbg_breakpoint_changed(void)
 #endif
 }
 
-void bx_dbg_en_dis_breakpoint_command(unsigned handle, bool enable)
+void bx_dbg_en_dis_breakpoint_command(unsigned handle, bx_bool enable)
 {
 #if (BX_DBG_MAX_VIR_BPOINTS > 0)
   if (bx_dbg_en_dis_vbreak(handle, enable))
@@ -74,7 +73,7 @@ done:
   bx_dbg_breakpoint_changed();
 }
 
-bool bx_dbg_en_dis_pbreak(unsigned handle, bool enable)
+bx_bool bx_dbg_en_dis_pbreak(unsigned handle, bx_bool enable)
 {
 #if (BX_DBG_MAX_PHY_BPOINTS > 0)
   // see if breakpoint is a physical breakpoint
@@ -88,7 +87,7 @@ bool bx_dbg_en_dis_pbreak(unsigned handle, bool enable)
   return 0;
 }
 
-bool bx_dbg_en_dis_lbreak(unsigned handle, bool enable)
+bx_bool bx_dbg_en_dis_lbreak(unsigned handle, bx_bool enable)
 {
 #if (BX_DBG_MAX_LIN_BPOINTS > 0)
   // see if breakpoint is a linear breakpoint
@@ -102,7 +101,7 @@ bool bx_dbg_en_dis_lbreak(unsigned handle, bool enable)
   return 0;
 }
 
-bool bx_dbg_en_dis_vbreak(unsigned handle, bool enable)
+bx_bool bx_dbg_en_dis_vbreak(unsigned handle, bx_bool enable)
 {
 #if (BX_DBG_MAX_VIR_BPOINTS > 0)
   // see if breakpoint is a virtual breakpoint
@@ -140,7 +139,7 @@ done:
   bx_dbg_breakpoint_changed();
 }
 
-bool bx_dbg_del_pbreak(unsigned handle)
+bx_bool bx_dbg_del_pbreak(unsigned handle)
 {
 #if (BX_DBG_MAX_PHY_BPOINTS > 0)
   // see if breakpoint is a physical breakpoint
@@ -159,7 +158,7 @@ bool bx_dbg_del_pbreak(unsigned handle)
   return 0;
 }
 
-bool bx_dbg_del_lbreak(unsigned handle)
+bx_bool bx_dbg_del_lbreak(unsigned handle)
 {
 #if (BX_DBG_MAX_LIN_BPOINTS > 0)
   // see if breakpoint is a linear breakpoint
@@ -178,7 +177,7 @@ bool bx_dbg_del_lbreak(unsigned handle)
   return 0;
 }
 
-bool bx_dbg_del_vbreak(unsigned handle)
+bx_bool bx_dbg_del_vbreak(unsigned handle)
 {
 #if (BX_DBG_MAX_VIR_BPOINTS > 0)
   // see if breakpoint is a virtual breakpoint

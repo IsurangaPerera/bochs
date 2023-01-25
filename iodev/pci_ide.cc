@@ -1,8 +1,8 @@
 /////////////////////////////////////////////////////////////////////////
-// $Id: pci_ide.cc 14312 2021-07-12 19:05:25Z vruppert $
+// $Id: pci_ide.cc 13497 2018-05-01 15:54:37Z vruppert $
 /////////////////////////////////////////////////////////////////////////
 //
-//  Copyright (C) 2004-2021  The Bochs Project
+//  Copyright (C) 2004-2018  The Bochs Project
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -41,18 +41,17 @@ bx_pci_ide_c *thePciIdeController = NULL;
 
 const Bit8u bmdma_iomask[16] = {1, 0, 1, 0, 4, 0, 0, 0, 1, 0, 1, 0, 4, 0, 0, 0};
 
-PLUGIN_ENTRY_FOR_MODULE(pci_ide)
+int CDECL libpci_ide_LTX_plugin_init(plugin_t *plugin, plugintype_t type)
 {
-  if (mode == PLUGIN_INIT) {
-    thePciIdeController = new bx_pci_ide_c();
-    bx_devices.pluginPciIdeController = thePciIdeController;
-    BX_REGISTER_DEVICE_DEVMODEL(plugin, type, thePciIdeController, BX_PLUGIN_PCI_IDE);
-  } else if (mode == PLUGIN_FINI) {
-    delete thePciIdeController;
-  } else if (mode == PLUGIN_PROBE) {
-    return (int)PLUGTYPE_STANDARD;
-  }
+  thePciIdeController = new bx_pci_ide_c();
+  bx_devices.pluginPciIdeController = thePciIdeController;
+  BX_REGISTER_DEVICE_DEVMODEL(plugin, type, thePciIdeController, BX_PLUGIN_PCI_IDE);
   return(0); // Success
+}
+
+void CDECL libpci_ide_LTX_plugin_fini(void)
+{
+  delete thePciIdeController;
 }
 
 bx_pci_ide_c::bx_pci_ide_c()
@@ -215,7 +214,7 @@ void bx_pci_ide_c::param_restore(bx_param_c *param, Bit64s val)
 }
 // save/restore code end
 
-bool bx_pci_ide_c::bmdma_present(void)
+bx_bool bx_pci_ide_c::bmdma_present(void)
 {
   return (BX_PIDE_THIS pci_bar[4].addr > 0);
 }
@@ -267,7 +266,7 @@ void bx_pci_ide_c::timer()
   }
   if (BX_PIDE_THIS s.bmdma[channel].cmd_rwcon) {
     BX_DEBUG(("READ DMA to addr=0x%08x, size=0x%08x", prd.addr, size));
-    count = (int)(size - (BX_PIDE_THIS s.bmdma[channel].buffer_top - BX_PIDE_THIS s.bmdma[channel].buffer_idx));
+    count = size - (BX_PIDE_THIS s.bmdma[channel].buffer_top - BX_PIDE_THIS s.bmdma[channel].buffer_idx);
     while (count > 0) {
       sector_size = count;
       if (DEV_hd_bmdma_read_sector(channel, BX_PIDE_THIS s.bmdma[channel].buffer_top, &sector_size)) {
@@ -288,7 +287,7 @@ void bx_pci_ide_c::timer()
     BX_DEBUG(("WRITE DMA from addr=0x%08x, size=0x%08x", prd.addr, size));
     DEV_MEM_READ_PHYSICAL_DMA(prd.addr, size, BX_PIDE_THIS s.bmdma[channel].buffer_top);
     BX_PIDE_THIS s.bmdma[channel].buffer_top += size;
-    count = (int)(BX_PIDE_THIS s.bmdma[channel].buffer_top - BX_PIDE_THIS s.bmdma[channel].buffer_idx);
+    count = BX_PIDE_THIS s.bmdma[channel].buffer_top - BX_PIDE_THIS s.bmdma[channel].buffer_idx;
     while (count > 511) {
       if (DEV_hd_bmdma_write_sector(channel, BX_PIDE_THIS s.bmdma[channel].buffer_idx)) {
         BX_PIDE_THIS s.bmdma[channel].buffer_idx += 512;
@@ -309,7 +308,7 @@ void bx_pci_ide_c::timer()
     DEV_hd_bmdma_complete(channel);
   } else {
     // To avoid buffer overflow reset buffer pointers and copy data if necessary
-    count = (int)(BX_PIDE_THIS s.bmdma[channel].buffer_top - BX_PIDE_THIS s.bmdma[channel].buffer_idx);
+    count = BX_PIDE_THIS s.bmdma[channel].buffer_top - BX_PIDE_THIS s.bmdma[channel].buffer_idx;
     if (count > 0) {
       memmove(BX_PIDE_THIS s.bmdma[channel].buffer, BX_PIDE_THIS s.bmdma[channel].buffer_idx, count);
     }
@@ -351,8 +350,8 @@ Bit32u bx_pci_ide_c::read(Bit32u address, unsigned io_len)
   offset &= 0x07;
   switch (offset) {
     case 0x00:
-      value = (Bit32u)BX_PIDE_THIS s.bmdma[channel].cmd_ssbm |
-              (Bit32u)(BX_PIDE_THIS s.bmdma[channel].cmd_rwcon << 3);
+      value = BX_PIDE_THIS s.bmdma[channel].cmd_ssbm |
+              (BX_PIDE_THIS s.bmdma[channel].cmd_rwcon << 3);
       BX_DEBUG(("BM-DMA read command register, channel %d, value = 0x%02x", channel, value));
       break;
     case 0x02:

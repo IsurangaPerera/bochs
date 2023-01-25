@@ -1,8 +1,8 @@
 /////////////////////////////////////////////////////////////////////////
-// $Id: soundoss.cc 14181 2021-03-11 21:46:25Z vruppert $
+// $Id: soundoss.cc 13160 2017-03-30 18:08:15Z vruppert $
 /////////////////////////////////////////////////////////////////////////
 //
-//  Copyright (C) 2001-2021  The Bochs Project
+//  Copyright (C) 2001-2017  The Bochs Project
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -27,9 +27,7 @@
 // is used to know when we are exporting symbols and when we are importing.
 #define BX_PLUGGABLE
 
-#include "bochs.h"
-#include "plugin.h"
-#include "pc_system.h"
+#include "iodev.h"
 #include "soundlow.h"
 #include "soundmod.h"
 #include "soundoss.h"
@@ -42,14 +40,17 @@
 #include <sys/ioctl.h>
 #include <sys/soundcard.h>
 
-// sound driver plugin entry point
+// sound driver plugin entry points
 
-PLUGIN_ENTRY_FOR_SND_MODULE(oss)
+int CDECL liboss_sound_plugin_init(plugin_t *plugin, plugintype_t type)
 {
-  if (mode == PLUGIN_PROBE) {
-    return (int)PLUGTYPE_SND;
-  }
+  // Nothing here yet
   return 0; // Success
+}
+
+void CDECL liboss_sound_plugin_fini(void)
+{
+  // Nothing here yet
 }
 
 // bx_soundlow_waveout_oss_c class implementation

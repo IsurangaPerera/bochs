@@ -1,8 +1,8 @@
 /////////////////////////////////////////////////////////////////////////
-// $Id: soundalsa.cc 14181 2021-03-11 21:46:25Z vruppert $
+// $Id: soundalsa.cc 13249 2017-06-02 16:56:58Z vruppert $
 /////////////////////////////////////////////////////////////////////////
 //
-//  Copyright (C) 2013-2021  The Bochs Project
+//  Copyright (C) 2013-2017  The Bochs Project
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -26,9 +26,7 @@
 // is used to know when we are exporting symbols and when we are importing.
 #define BX_PLUGGABLE
 
-#include "bochs.h"
-#include "plugin.h"
-#include "pc_system.h"
+#include "iodev.h"
 #include "soundlow.h"
 #include "soundmod.h"
 #include "soundalsa.h"
@@ -37,19 +35,22 @@
 
 #define LOG_THIS log->
 
-// sound driver plugin entry point
+// sound driver plugin entry points
 
-PLUGIN_ENTRY_FOR_SND_MODULE(alsa)
+int CDECL libalsa_sound_plugin_init(plugin_t *plugin, plugintype_t type)
 {
-  if (mode == PLUGIN_PROBE) {
-    return (int)PLUGTYPE_SND;
-  }
+  // Nothing here yet
   return 0; // Success
+}
+
+void CDECL libalsa_sound_plugin_fini(void)
+{
+  // Nothing here yet
 }
 
 // helper function for wavein / waveout
 
-int alsa_pcm_open(bool mode, alsa_pcm_t *alsa_pcm, bx_pcm_param_t *param, logfunctions *log)
+int alsa_pcm_open(bx_bool mode, alsa_pcm_t *alsa_pcm, bx_pcm_param_t *param, logfunctions *log)
 {
   snd_pcm_format_t fmt;
   snd_pcm_hw_params_t *hwparams;

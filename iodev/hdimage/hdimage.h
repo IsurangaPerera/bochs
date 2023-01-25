@@ -1,8 +1,8 @@
 /////////////////////////////////////////////////////////////////////////
-// $Id: hdimage.h 14181 2021-03-11 21:46:25Z vruppert $
+// $Id: hdimage.h 13482 2018-03-31 17:07:44Z vruppert $
 /////////////////////////////////////////////////////////////////////////
 //
-//  Copyright (C) 2005-2021  The Bochs Project
+//  Copyright (C) 2005-2018  The Bochs Project
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -140,31 +140,27 @@
 
 class device_image_t;
 class redolog_t;
-class cdrom_base_c;
 
-#ifdef BXIMAGE
-int bx_create_image_file(const char *filename);
-#endif
-BOCHSAPI_MSVCONLY int bx_read_image(int fd, Bit64s offset, void *buf, int count);
-BOCHSAPI_MSVCONLY int bx_write_image(int fd, Bit64s offset, void *buf, int count);
-BOCHSAPI_MSVCONLY int bx_close_image(int fd, const char *pathname);
+int bx_read_image(int fd, Bit64s offset, void *buf, int count);
+int bx_write_image(int fd, Bit64s offset, void *buf, int count);
+int bx_close_image(int fd, const char *pathname);
 #ifndef WIN32
 int hdimage_open_file(const char *pathname, int flags, Bit64u *fsize, time_t *mtime);
 #else
-BOCHSAPI_MSVCONLY int hdimage_open_file(const char *pathname, int flags, Bit64u *fsize, FILETIME *mtime);
+int hdimage_open_file(const char *pathname, int flags, Bit64u *fsize, FILETIME *mtime);
 #endif
-bool hdimage_detect_image_mode(const char *pathname, const char **image_mode);
-BOCHSAPI_MSVCONLY bool hdimage_backup_file(int fd, const char *backup_fname);
-BOCHSAPI_MSVCONLY bool hdimage_copy_file(const char *src, const char *dst);
-bool coherency_check(device_image_t *ro_disk, redolog_t *redolog);
+int hdimage_detect_image_mode(const char *pathname);
+bx_bool hdimage_backup_file(int fd, const char *backup_fname);
+bx_bool hdimage_copy_file(const char *src, const char *dst);
+bx_bool coherency_check(device_image_t *ro_disk, redolog_t *redolog);
 #ifndef WIN32
 Bit16u fat_datetime(time_t time, int return_time);
 #else
-Bit16u BOCHSAPI_MSVCONLY fat_datetime(FILETIME time, int return_time);
+Bit16u fat_datetime(FILETIME time, int return_time);
 #endif
 
 // base class
-class BOCHSAPI_MSVCONLY device_image_t
+class device_image_t
 {
   public:
       // Default constructor
@@ -201,13 +197,10 @@ class BOCHSAPI_MSVCONLY device_image_t
       // Check image format
       static int check_format(int fd, Bit64u imgsize) {return HDIMAGE_NO_SIGNATURE;}
 
-#ifdef BXIMAGE
-      // Create new image file
-      virtual int create_image(const char *pathname, Bit64u size) {return 0;}
-#else
+#ifndef BXIMAGE
       // Save/restore support
       virtual void register_state(bx_list_c *parent);
-      virtual bool save_state(const char *backup_fname) {return 0;}
+      virtual bx_bool save_state(const char *backup_fname) {return 0;}
       virtual void restore_state(const char *backup_fname) {}
 #endif
 
@@ -251,7 +244,7 @@ class flat_image_t : public device_image_t
 
 #ifndef BXIMAGE
       // Save/restore support
-      bool save_state(const char *backup_fname);
+      bx_bool save_state(const char *backup_fname);
       void restore_state(const char *backup_fname);
 #endif
 
@@ -287,7 +280,7 @@ class concat_image_t : public device_image_t
 
 #ifndef BXIMAGE
       // Save/restore support
-      bool save_state(const char *backup_fname);
+      bx_bool save_state(const char *backup_fname);
       void restore_state(const char *backup_fname);
 #endif
 
@@ -303,7 +296,7 @@ class concat_image_t : public device_image_t
       // This can be supported pretty easily, but needs additional checks.
       // 0=something other than seek was last operation
       // 1=seek was last operation
-      //int seek_was_last_op;
+      int seek_was_last_op;
 
       // the following variables tell which partial image file to use for
       // the next read and write.
@@ -348,12 +341,9 @@ class sparse_image_t : public device_image_t
     // Check image format
     static int check_format(int fd, Bit64u imgsize);
 
-#ifdef BXIMAGE
-    // Create new image file
-    int create_image(const char *pathname, Bit64u size);
-#else
+#ifndef BXIMAGE
     // Save/restore support
-    bool save_state(const char *backup_fname);
+    bx_bool save_state(const char *backup_fname);
     void restore_state(const char *backup_fname);
 #endif
 
@@ -382,7 +372,7 @@ class sparse_image_t : public device_image_t
 
     char *pathname;
 
-    //Bit64s position;
+    Bit64s position;
 
     Bit32u position_virtual_page;
     Bit32u position_physical_page;
@@ -400,6 +390,10 @@ class sparse_image_t : public device_image_t
 
     sparse_image_t *parent_image;
 };
+
+#if EXTERNAL_DISK_SIMULATOR
+#include "external-disk-simulator.h"
+#endif
 
 #ifdef WIN32
 class dll_image_t : public device_image_t
@@ -432,7 +426,7 @@ class dll_image_t : public device_image_t
 #endif
 
 // REDOLOG class
-class BOCHSAPI_MSVCONLY redolog_t
+class redolog_t
 {
   public:
       redolog_t();
@@ -444,7 +438,7 @@ class BOCHSAPI_MSVCONLY redolog_t
       void close();
       Bit64u get_size();
       Bit32u get_timestamp();
-      bool set_timestamp(Bit32u timestamp);
+      bx_bool set_timestamp(Bit32u timestamp);
 
       Bit64s lseek(Bit64s offset, int whence);
       ssize_t read(void* buf, size_t count);
@@ -455,7 +449,7 @@ class BOCHSAPI_MSVCONLY redolog_t
 #ifdef BXIMAGE
       int commit(device_image_t *base_image);
 #else
-      bool save_state(const char *backup_fname);
+      bx_bool save_state(const char *backup_fname);
 #endif
 
   private:
@@ -465,7 +459,7 @@ class BOCHSAPI_MSVCONLY redolog_t
       redolog_header_t header;     // Header is kept in x86 (little) endianness
       Bit32u          *catalog;
       Bit8u           *bitmap;
-      bool             bitmap_update;
+      bx_bool          bitmap_update;
       Bit32u           extent_index;
       Bit32u           extent_offset;
       Bit32u           extent_next;
@@ -508,12 +502,9 @@ class growing_image_t : public device_image_t
       // Check image format
       static int check_format(int fd, Bit64u imgsize);
 
-#ifdef BXIMAGE
-      // Create new image file
-      int create_image(const char *pathname, Bit64u size);
-#else
+#ifndef BXIMAGE
       // Save/restore support
-      bool save_state(const char *backup_fname);
+      bx_bool save_state(const char *backup_fname);
       void restore_state(const char *backup_fname);
 #endif
 
@@ -553,7 +544,7 @@ class undoable_image_t : public device_image_t
 
 #ifndef BXIMAGE
       // Save/restore support
-      bool save_state(const char *backup_fname);
+      bx_bool save_state(const char *backup_fname);
       void restore_state(const char *backup_fname);
 #endif
 
@@ -596,7 +587,7 @@ class volatile_image_t : public device_image_t
 
 #ifndef BXIMAGE
       // Save/restore support
-      bool save_state(const char *backup_fname);
+      bx_bool save_state(const char *backup_fname);
       void restore_state(const char *backup_fname);
 #endif
 
@@ -610,47 +601,13 @@ class volatile_image_t : public device_image_t
 
 
 #ifndef BXIMAGE
-
-#define DEV_hdimage_init_image(a,b,c) bx_hdimage_ctl.init_image(a,b,c)
-#define DEV_hdimage_init_cdrom(a)     bx_hdimage_ctl.init_cdrom(a)
-
-class BOCHSAPI bx_hdimage_ctl_c : public logfunctions {
+class bx_hdimage_ctl_c : public bx_hdimage_ctl_stub_c {
 public:
   bx_hdimage_ctl_c();
   virtual ~bx_hdimage_ctl_c() {}
-  void init(void);
-  const char **get_mode_names();
-  int get_mode_id(const char *mode);
-  void list_modules(void);
-  void exit(void);
-  device_image_t *init_image(const char *image_mode, Bit64u disk_size, const char *journal);
-  cdrom_base_c *init_cdrom(const char *dev);
+  virtual device_image_t *init_image(Bit8u image_mode, Bit64u disk_size, const char *journal);
+  virtual cdrom_base_c *init_cdrom(const char *dev);
 };
-
-BOCHSAPI extern bx_hdimage_ctl_c bx_hdimage_ctl;
-
-#endif // ifndef BXIMAGE
-
-//
-// The hdimage_locator class is used by device_image_t classes to register
-// their name. The common hdimage code uses the static 'create' method
-// to locate and instantiate a device_image_t class.
-//
-class BOCHSAPI_MSVCONLY hdimage_locator_c {
-public:
-  static bool module_present(const char *mode);
-  static void cleanup(void);
-  static device_image_t *create(const char *mode, Bit64u disk_size, const char *journal);
-  static bool detect_image_mode(int fd, Bit64u disk_size, const char **image_mode);
-protected:
-  hdimage_locator_c(const char *mode);
-  virtual ~hdimage_locator_c();
-  virtual device_image_t *allocate(Bit64u disk_size, const char *journal) = 0;
-  virtual int check_format(int fd, Bit64u disk_size) {return -1;}
-private:
-  static hdimage_locator_c *all;
-  hdimage_locator_c *next;
-  const char *mode;
-};
+#endif // BXIMAGE
 
 #endif
